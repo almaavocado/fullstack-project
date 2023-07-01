@@ -6,29 +6,12 @@ const Form = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [agePreference, setAgePreference] = useState('');
   const [activityPreference, setActivityPreference] = useState('');
-  const [experienceWithPets, setExperienceWithPets] = useState(false);
+  const [experienceWithPets, setExperienceWithPets] = useState(null);
   const [otherPets, setOtherPets] = useState('');
   const [emailError, setEmailError] = useState('');
-  const [formSubmitted, setFormSubmitted] = useState(false);
   const [requiredFieldsError, setRequiredFieldsError] = useState('');
-
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const [formSubmitted, setFormSubmitted] = useState(false);
   
-    // Validate the required fields
-    if (!name || !email || !agePreference || experienceWithPets === '' || otherPets === '') {
-      setRequiredFieldsError('Please fill out all required fields');
-      return;
-    }
-  
-    // Reset the error message and set the form submission status to true
-    setRequiredFieldsError('');
-    setFormSubmitted(true);
-  
-    // Testing
-    console.log('Form submitted');
-  };
 
   const handleEmailChange = (e) => {
     const enteredEmail = e.target.value;
@@ -42,7 +25,7 @@ const Form = () => {
   };
 
   const validateEmail = (email) => {
-    // Email validation logic
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
@@ -56,7 +39,7 @@ const Form = () => {
     // Remove all non-digit characters from the input value
     const cleanedValue = value.replace(/\D/g, '');
 
-    // Apply the formatting mask
+    // Apply the formatting mask - (###)-###-####
     const formattedValue = cleanedValue.replace(
       /^(\d{3})(\d{3})(\d{4})$/,
       '($1)-$2-$3'
@@ -72,10 +55,63 @@ const Form = () => {
     setPhoneNumber(formattedValue);
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
+    // Validate the required fields
+    if (!name || !email || !agePreference || experienceWithPets === null || otherPets === '') {
+      setRequiredFieldsError('Please fill out all required fields');
+      return;
+    }
+  
+    // Reset the error message and set the form submission status to true
+    setRequiredFieldsError('');
+    setFormSubmitted(true);
+
+    // Prepare the data to be sent to the backend
+    const formData = {
+      name,
+      email,
+      phoneNumber,
+      agePreference,
+      activityPreference,
+      experienceWithPets,
+      otherPets,
+    };
+
+    // Send form data to the backend endpoint
+    fetch('/api/submit-interest-form/', {
+      method: 'POST',
+      body: JSON.stringify(formData),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+      if (response.ok) {
+        // Reset the form values
+        setName('');
+        setEmail('');
+        setPhoneNumber('');
+        setAgePreference('');
+        setActivityPreference('');
+        setExperienceWithPets(false);
+        setOtherPets('');
+      }
+      return response.json();
+    })
+    .then((data) => {
+      // Handle the response from the backend
+      console.log(data); // testing
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+  };
+
   return (
     <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 space-y-6">
       <h2 className="text-2xl font-bold">Dog Adoption Interest Form</h2>
-
       <div className='space-y-2'>
       <div>
         <label htmlFor="name" className="block text-gray-700 font-medium mb-1">
@@ -228,6 +264,10 @@ const Form = () => {
         Submit
       </button>
       </div>
+
+      {formSubmitted && (
+        <p className="text-green-500 text-lg font-medium">Application received. We will contact you shortly!</p>
+      )}
 
     </form>
   );
